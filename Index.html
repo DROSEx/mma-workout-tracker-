@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMA Workout Tracker</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #111; color: #eee; }
+        nav { display: flex; background: #222; position: sticky; top: 0; }
+        nav button { flex: 1; padding: 15px; background: none; border: none; color: #eee; font-size: 16px; }
+        nav button.active { background: #333; border-bottom: 3px solid #0f0; }
+        .tab { padding: 20px; display: none; }
+        .tab.active { display: block; }
+        h1, h2 { color: #0f0; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; color: #eee; border: 1px solid #444; border-radius: 6px; }
+        button { background: #0f0; color: #111; padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .exercise { border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .log-entry { background: #222; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <button onclick="showTab(0)" class="active">Overview</button>
+        <button onclick="showTab(1)">Log Workout</button>
+        <button onclick="showTab(2)">History</button>
+        <button onclick="showTab(3)">Progress</button>
+    </nav>
+
+    <!-- Tab 0: Overview -->
+    <div id="tab0" class="tab active">
+        <h1>MMA Athlete Workout Plan (Age 33)</h1>
+        <p>6 days training • 1 rest day • 60-90 min sessions • Warm-up 5-10 min light cardio + dynamic stretches • Cool-down stretch/foam roll</p>
+        <h2>Day 1 & 4: Lower Body Strength + Core</h2>
+        <div class="exercise">1. Squats (barbell or goblet) – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">2. Romanian Deadlifts – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">3. Lunges (walking or reverse, dumbbell) – Target: 3 sets of 10 per leg</div>
+        <div class="exercise">4. Calf Raises – Target: 3 sets of 12–15 reps</div>
+        <div class="exercise">5. Core circuit (3 rounds): Planks (60 sec), Russian Twists (20 per side), Hanging Leg Raises (10–12)</div>
+
+        <h2>Day 2 & 5: Upper Body Strength + Striking Conditioning</h2>
+        <div class="exercise">1. Bench Press (barbell or dumbbell) – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">2. Bent-Over Rows – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">3. Overhead Press (dumbbell) – Target: 3 sets of 8–10 reps</div>
+        <div class="exercise">4. Pull-Ups or Lat Pulldowns – Target: 3 sets of 8–12 reps</div>
+        <div class="exercise">5. 20–30 min Boxing Circuit or BODYCOMBAT class</div>
+
+        <h2>Day 3 & 6: Full-Body HIIT / Conditioning or Mobility</h2>
+        <div class="exercise">Circuit (4–5 rounds, 45s work / 15s rest): Burpees, Kettlebell Swings, Shadow Boxing (3-min rounds), Battle Ropes or Med Ball Slams, Mountain Climbers</div>
+        <div class="exercise">+ 15–20 min cycle/rower + Reform Pilates or Hot Yoga (Day 6 focus)</div>
+        <p><strong>Day 7: Rest or light active recovery</strong></p>
+        <p>Use Richmond Platinum for energy/recovery, QV or Flinders for 24/7 or boxing focus. Track progressive overload every 2–3 weeks.</p>
+    </div>
+
+    <!-- Tab 1: Log Workout -->
+    <div id="tab1" class="tab">
+        <h2>Log Today's Workout</h2>
+        <label>Date: <input type="date" id="logDate" value=""></label>
+        <label>Gym: 
+            <select id="logGym">
+                <option>Richmond Platinum (Cremorne)</option>
+                <option>QV Platinum (CBD)</option>
+                <option>Flinders St Platinum (CBD)</option>
+                <option>Melbourne Central Platinum</option>
+                <option>Victoria Gardens (Richmond)</option>
+                <option>Balaclava Platinum</option>
+                <option>Bayside Platinum (Highett)</option>
+                <option>Doncaster</option>
+                <option>Glen Waverley</option>
+                <option>Malvern Valley (Chadstone)</option>
+                <option>Brighton</option>
+                <option>Other</option>
+            </select>
+        </label>
+        <label>Day Type: <select id="logDayType"><option>Day 1/4 - Lower Strength + Core</option><option>Day 2/5 - Upper + Striking</option><option>Day 3/6 - Full-Body HIIT / Mobility</option><option>Rest / Active Recovery</option><option>Custom</option></select></label>
+        
+        <h3>Exercises (log actual performance)</h3>
+        <div id="exerciseLogContainer"></div>
+        
+        <button onclick="addExerciseRow()">+ Add extra exercise</button>
+        <button onclick="saveLog()" style="margin-top:20px; width:100%;">Save Workout Log</button>
+    </div>
+
+    <!-- Tab 2: History -->
+    <div id="tab2" class="tab">
+        <h2>Workout History</h2>
+        <div id="historyContainer"></div>
+    </div>
+
+    <!-- Tab 3: Progress -->
+    <div id="tab3" class="tab">
+        <h2>Progress Summary</h2>
+        <p id="progressSummary">No logs yet. Start logging workouts to see trends here.</p>
+        <div id="progressList"></div>
+    </div>
+
+    <script>
+        const planExercises = {
+            "Day 1/4 - Lower Strength + Core": [
+                {name: "Squats", target: "4x8-10"},
+                {name: "Romanian Deadlifts", target: "4x8-10"},
+                {name: "Lunges", target: "3x10 per leg"},
+                {name: "Calf Raises", target: "3x12-15"},
+                {name: "Core Circuit", target: "3 rounds"}
+            ],
+            "Day 2/5 - Upper + Striking": [
+                {name: "Bench Press", target: "4x8-10"},
+                {name: "Bent-Over Rows", target: "4x8-10"},
+                {name: "Overhead Press", target: "3x8-10"},
+                {name: "Pull-Ups / Lat Pulldowns", target: "3x8-12"},
+                {name: "Boxing Circuit / BODYCOMBAT", target: "20-30 min"}
+            ],
+            "Day 3/6 - Full-Body HIIT / Mobility": [
+                {name: "HIIT Circuit (Burpees, KB Swings, Shadow Boxing, etc.)", target: "4-5 rounds"},
+                {name: "Cardio Finisher", target: "15-20 min"},
+                {name: "Mobility (Pilates/Yoga)", target: "Optional class"}
+            ]
+        };
+
+        function showTab(n) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab' + n).classList.add('active');
+            document.querySelectorAll('nav button')[n].classList.add('active');
+            if (n === 2) loadHistory();
+            if (n === 3) loadProgress();
+        }
+
+        function populateExerciseLog(dayType) {
+            const container = document.getElementById('exerciseLogContainer');
+            container.innerHTML = '';
+            const exercises = planExercises[dayType] || [];
+            exercises.forEach(ex => {
+                const row = document.createElement('div');
+                row.className = 'exercise';
+                row.innerHTML = `
+                    <strong>${ex.name}</strong> <small>(target: ${ex.target})</small>
+                    <input type="text" placeholder="Weight used (kg)" class="weight">
+                    <input type="text" placeholder="Actual sets x reps" class="actual">
+                    <textarea placeholder="Notes (e.g. felt strong, used Richmond free weights)" rows="2"></textarea>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        document.getElementById('logDayType').addEventListener('change', function() {
+            populateExerciseLog(this.value);
+        });
+
+        function addExerciseRow() {
+            const container = document.getElementById('exerciseLogContainer');
+            const row = document.createElement('div');
+            row.className = 'exercise';
+            row.innerHTML = `
+                <input type="text" placeholder="Exercise name" class="customName" style="margin-bottom:8px;">
+                <input type="text" placeholder="Weight used (kg)" class="weight">
+                <input type="text" placeholder="Actual sets x reps" class="actual">
+                <textarea placeholder="Notes" rows="2"></textarea>
+            `;
+            container.appendChild(row);
+        }
+
+        function saveLog() {
+            const date = document.getElementById('logDate').value || new Date().toISOString().split('T')[0];
+            const gym = document.getElementById('logGym').value;
+            const dayType = document.getElementById('logDayType').value;
+            
+            const container = document.getElementById('exerciseLogContainer');
+            const rows = container.querySelectorAll('.exercise');
+            const exercisesLogged = [];
+            
+            rows.forEach(row => {
+                const nameEl = row.querySelector('strong') || row.querySelector('.customName');
+                const name = nameEl ? (nameEl.textContent || nameEl.value) : 'Custom';
+                const weight = row.querySelector('.weight').value || '';
+                const actual = row.querySelector('.actual').value || '';
+                const notes = row.querySelector('textarea').value || '';
+                if (name) exercisesLogged.push({name, weight, actual, notes});
+            });
+            
+            const logs = JSON.parse(localStorage.getItem('mmaLogs') || '[]');
+            logs.unshift({date, gym, dayType, exercises: exercisesLogged});
+            localStorage.setItem('mmaLogs', JSON.stringify(logs));
+            
+            alert('Workout saved successfully!');
+            showTab(2); // switch to history
+        }
+
+        function loadHistory() {
+            const container = document.getElementById('historyContainer');
+            const logs = JSON.parse(localStorage.getItem('mmaLogs') || '[]');
+            container.innerHTML = logs.length === 0 ? '<p>No logs yet. Start logging to build your journal.</p>' : '';
+            logs.forEach((log, i) => {
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = `
+                    <strong>${log.date} • ${log.gym}</strong><br>
+                    <small>${log.dayType}</small>
+                    <ul style="margin:10px 0; padding-left:20px;">
+                        \( {log.exercises.map(ex => `<li> \){ex.name}: ${ex.weight}kg • ${ex.actual} • ${ex.notes}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(entry);
+            });
+        }
+
+        function loadProgress() {
+            const logs = JSON.parse(localStorage.getItem('mmaLogs') || '[]');
+            const summary = document.getElementById('progressSummary');
+            const list = document.getElementById('progressList');
+            if (logs.length === 0) return;
+            summary.textContent = `Total workouts logged: ${logs.length} • Last session: ${logs[0].date}`;
+            list.innerHTML = '<h3>Recent sessions</h3>' + logs.slice(0, 5).map(log => `
+                <div class="log-entry">
+                    ${log.date} at ${log.gym}<br>
+                    \( {log.exercises.map(ex => ` \){ex.name} (${ex.actual})`).join(' • ')}
+                </div>
+            `).join('');
+        }
+
+        // Auto-set today's date
+        window.onload = function() {
+            document.getElementById('logDate').value = new Date().toISOString().split('T')[0];
+            populateExerciseLog(document.getElementById('logDayType').value);
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMA Workout Tracker</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #111; color: #eee; }
+        nav { display: flex; background: #222; position: sticky; top: 0; }
+        nav button { flex: 1; padding: 15px; background: none; border: none; color: #eee; font-size: 16px; }
+        nav button.active { background: #333; border-bottom: 3px solid #0f0; }
+        .tab { padding: 20px; display: none; }
+        .tab.active { display: block; }
+        h1, h2 { color: #0f0; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; color: #eee; border: 1px solid #444; border-radius: 6px; }
+        button { background: #0f0; color: #111; padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .exercise { border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .log-entry { background: #222; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <button onclick="showTab(0)" class="active">Overview</button>
+        <button onclick="showTab(1)">Log Workout</button>
+        <button onclick="showTab(2)">History</button>
+        <button onclick="showTab(3)">Progress</button>
+    </nav>
+
+    <!-- Tab 0: Overview -->
+    <div id="tab0" class="tab active">
+        <h1>MMA Athlete Workout Plan (Age 33)</h1>
+        <p>6 days training • 1 rest day • 60-90 min sessions • Warm-up 5-10 min light cardio + dynamic stretches • Cool-down stretch/foam roll</p>
+        <h2>Day 1 & 4: Lower Body Strength + Core</h2>
+        <div class="exercise">1. Squats (barbell or goblet) – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">2. Romanian Deadlifts – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">3. Lunges (walking or reverse, dumbbell) – Target: 3 sets of 10 per leg</div>
+        <div class="exercise">4. Calf Raises – Target: 3 sets of 12–15 reps</div>
+        <div class="exercise">5. Core circuit (3 rounds): Planks (60 sec), Russian Twists (20 per side), Hanging Leg Raises (10–12)</div>
+
+        <h2>Day 2 & 5: Upper Body Strength + Striking Conditioning</h2>
+        <div class="exercise">1. Bench Press (barbell or dumbbell) – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">2. Bent-Over Rows – Target: 4 sets of 8–10 reps</div>
+        <div class="exercise">3. Overhead Press (dumbbell) – Target: 3 sets of 8–10 reps</div>
+        <div class="exercise">4. Pull-Ups or Lat Pulldowns – Target: 3 sets of 8–12 reps</div>
+        <div class="exercise">5. 20–30 min Boxing Circuit or BODYCOMBAT class</div>
+
+        <h2>Day 3 & 6: Full-Body HIIT / Conditioning or Mobility</h2>
+        <div class="exercise">Circuit (4–5 rounds, 45s work / 15s rest): Burpees, Kettlebell Swings, Shadow Boxing (3-min rounds), Battle Ropes or Med Ball Slams, Mountain Climbers</div>
+        <div class="exercise">+ 15–20 min cycle/rower + Reform Pilates or Hot Yoga (Day 6 focus)</div>
+        <p><strong>Day 7: Rest or light active recovery</strong></p>
+        <p>Use Richmond Platinum for energy/recovery, QV or Flinders for 24/7 or boxing focus. Track progressive overload every 2–3 weeks.</p>
+    </div>
+
+    <!-- Tab 1: Log Workout -->
+    <div id="tab1" class="tab">
+        <h2>Log Today's Workout</h2>
+        <label>Date: <input type="date" id="logDate" value=""></label>
+        <label>Gym: 
+            <select id="logGym">
+                <option>Richmond Platinum (Cremorne)</option>
+                <option>QV Platinum (CBD)</option>
+                <option>Flinders St Platinum (CBD)</option>
+                <option>Melbourne Central Platinum</option>
+                <option>Victoria Gardens (Richmond)</option>
+                <option>Balaclava Platinum</option>
+                <option>Bayside Platinum (Highett)</option>
+                <option>Doncaster</option>
+                <option>Glen Waverley</option>
+                <option>Malvern Valley (Chadstone)</option>
+                <option>Brighton</option>
+                <option>Other</option>
+            </select>
+        </label>
+        <label>Day Type: <select id="logDayType"><option>Day 1/4 - Lower Strength + Core</option><option>Day 2/5 - Upper + Striking</option><option>Day 3/6 - Full-Body HIIT / Mobility</option><option>Rest / Active Recovery</option><option>Custom</option></select></label>
+        
+        <h3>Exercises (log actual performance)</h3>
+        <div id="exerciseLogContainer"></div>
+        
+        <button onclick="addExerciseRow()">+ Add extra exercise</button>
+        <button onclick="saveLog()" style="margin-top:20px; width:100%;">Save Workout Log</button>
+    </div>
+
+    <!-- Tab 2: History -->
+    <div id="tab2" class="tab">
+        <h2>Workout History</h2>
+        <div id="historyContainer"></div>
+    </div>
+
+    <!-- Tab 3: Progress -->
+    <div id="tab3" class="tab">
+        <h2>Progress Summary</h2>
+        <p id="progressSummary">No logs yet. Start logging workouts to see trends here.</p>
+        <div id="progressList"></div>
+    </div>
+
+    <script>
+        const planExercises = {
+            "Day 1/4 - Lower Strength + Core": [
+                {name: "Squats", target: "4x8-10"},
+                {name: "Romanian Deadlifts", target: "4x8-10"},
+                {name: "Lunges", target: "3x10 per leg"},
+                {name: "Calf Raises", target: "3x12-15"},
+                {name: "Core Circuit", target: "3 rounds"}
+            ],
+            "Day 2/5 - Upper + Striking": [
+                {name: "Bench Press", target: "4x8-10"},
+                {name: "Bent-Over Rows", target: "4x8-10"},
+                {name: "Overhead Press", target: "3x8-10"},
+                {name: "Pull-Ups / Lat Pulldowns", target: "3x8-12"},
+                {name: "Boxing Circuit / BODYCOMBAT", target: "20-30 min"}
+            ],
+            "Day 3/6 - Full-Body HIIT / Mobility": [
+                {name: "HIIT Circuit (Burpees, KB Swings, Shadow Boxing, etc.)", target: "4-5 rounds"},
+                {name: "Cardio Finisher", target: "15-20 min"},
+                {name: "Mobility (Pilates/Yoga)", target: "Optional class"}
+            ]
+        };
+
+        function showTab(n) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab' + n).classList.add('active');
+            document.querySelectorAll('nav button')[n].classList.add('active');
+            if (n === 2) loadHistory();
+            if (n === 3) loadProgress();
+        }
+
+        function populateExerciseLog(dayType) {
+            const container = document.getElementById('exerciseLogContainer');
+            container.innerHTML = '';
+            const exercises = planExercises[dayType] || [];
+            exercises.forEach(ex => {
+                const row = document.createElement('div');
+                row.className = 'exercise';
+                row.innerHTML = `
+                    <strong>${ex.name}</strong> <small>(target: ${ex.target})</small>
+                    <input type="text" placeholder="Weight used (kg)" class="weight">
+                    <input type="text" placeholder="Actual sets x reps" class="actual">
+                    <textarea placeholder="Notes (e.g. felt strong, used Richmond free weights)" rows="2"></textarea>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        document.getElementById('logDayType').addEventListener('change', function() {
+            populateExerciseLog(this.value);
+        });
+
+        function addExerciseRow() {
+            const container = document.getElementById('exerciseLogContainer');
+            const row = document.createElement('div');
+            row.className = 'exercise';
+            row.innerHTML = `
+                <input type="text" placeholder="Exercise name" class="customName" style="margin-bottom:8px;">
+                <inpu
